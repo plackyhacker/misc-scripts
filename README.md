@@ -3,7 +3,7 @@ Miscellaneous Scripts
 
 ## OSED
 
-[bad-char-check.py](https://github.com/plackyhacker/misc-scripts/blob/main/osed/bad-char-check.py)
+[Bad Character Check](https://github.com/plackyhacker/misc-scripts/blob/main/osed/bad-char-check.py) checks for bad characters in custom x86 shellcode. This is really useful when you have bad characters present and need to change the shellcode without using decoding (e.g., when using `WriteProcessMemory` in a ROP chain):
 
 ```
 python3 ./bad-char-check.py                                                            
