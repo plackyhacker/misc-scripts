@@ -6,8 +6,7 @@
 # John Tear
 # 
 
-import sys, argparse
-import ctypes, struct
+import argparse
 from keystone import *
 from capstone import *
 from rich.console import Console
