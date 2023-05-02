@@ -25,3 +25,13 @@ The script can also be used to analyse an `msfvenom` raw file:
 ```
 python3 ./bad-char-check.py -r ./met.raw -b "0x00 0x0a 0x11 0xff" -s 20
 ```
+
+[IP to Hex](https://github.com/plackyhacker/misc-scripts/blob/main/osed/ip-to-hex.py)
+
+Simple script to convert an IP address to a 32-bit x86 `push` instruction:
+
+```
+python3 ./ip-to-hex.py 192.168.1.166  
+
+push 0xa601a8c0;                #   Push sin_addr (192.168.1.166)
+```
