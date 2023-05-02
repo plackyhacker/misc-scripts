@@ -2,7 +2,9 @@
 
 ## OSED
 
-[Bad Character Check](https://github.com/plackyhacker/misc-scripts/blob/main/osed/bad-char-check.py) checks for bad characters in custom x86 shellcode. This is really useful when you have bad characters present and need to change the shellcode without using decoding (e.g., when using `WriteProcessMemory` in a ROP chain):
+[Bad Character Check](https://github.com/plackyhacker/misc-scripts/blob/main/osed/bad-char-check.py)
+
+Checks for bad characters in custom x86 shellcode. This is really useful when you have bad characters present and need to change the shellcode without using decoding (e.g., when using `WriteProcessMemory` in a ROP chain):
 
 ```
 python3 ./bad-char-check.py                                                            
@@ -16,4 +18,10 @@ python3 ./bad-char-check.py -a ./test.asm -b "0x00 0x0a 0x11 0xff" -s 20
 0x1004  push   eax                                     ; 50 
 0x1005  push   esp                                     ; 54
 ...
+```
+
+The script can also be used to analyse an `msfvenom` raw file:
+
+```
+python3 ./bad-char-check.py -r ./met.raw -b "0x00 0x0a 0x11 0xff" -s 20
 ```
