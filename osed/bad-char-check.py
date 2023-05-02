@@ -83,8 +83,10 @@ def main():
         console.print(address + mnemonic + op_str + "; " + formatCode(shellcode, bad))
         counter = counter + 1
         if counter == counter_scroll:
-            console.print("[white bold]\nHit enter for next, or [A]ll[/]")
+            console.print("[white bold]\nHit enter for next, [C]ancel, or [A]ll[/]")
             answer = input("")
+            if answer.upper() == "C":
+                return
             if answer.upper() == "A":
                 counter_scroll = 10000
             counter = 0
