@@ -2,6 +2,8 @@
 
 ## OSED
 
+### Bad Character Check
+
 [Bad Character Check](https://github.com/plackyhacker/misc-scripts/blob/main/osed/bad-char-check.py)
 
 Checks for bad characters in custom x86 shellcode. This is really useful when you have bad characters present and need to change the shellcode without using decoding (e.g., when using `WriteProcessMemory` in a ROP chain):
@@ -25,6 +27,8 @@ The script can also be used to analyse an `msfvenom` raw file:
 ```
 python3 ./bad-char-check.py -r ./met.raw -b "0x00 0x0a 0x11 0xff" -s 20
 ```
+
+### IP to Hex
 
 [IP to Hex](https://github.com/plackyhacker/misc-scripts/blob/main/osed/ip-to-hex.py)
 
