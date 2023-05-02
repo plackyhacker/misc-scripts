@@ -1,8 +1,6 @@
 #!/usr/bin/python3
 # bad-char-check.py
-# Script written to take ASM as an input and output bad characters
-# Was written as an OSED aid
-#
+# Script written to take code and output bad characters for OSED
 # It's a bit 'hacky' and probably not the way to do it, but it serves my needs
 # 
 # John Tear
@@ -27,8 +25,16 @@ def main():
     parse_args(parser)
     args = parser.parse_args()
 
+    file = ""
+
+    if args.asm != "":
+        file = args.asm
+        f = open(file, "r")
+    if args.raw != "":
+        file = args.raw
+        f = open(file, "rb")
+
     # open the asm file
-    f = open(args.asm, "r")
     asm = f.read()
     bad = []
     f.close()
@@ -39,7 +45,10 @@ def main():
         bad.append(int(c, 16))
 
     # encode the asm
-    encodeAll(asm)
+    if args.asm != "":
+        encodeAll(asm)
+    else:
+        instructions = asm
 
     # now decode so we have the instructions and the shellcode
     md = Cs(CS_ARCH_X86, CS_MODE_32)
@@ -105,12 +114,14 @@ def encodeAll(code):
         instructions.append(int(hex(b).replace("0x", "").rjust(2, "0"), 16))
 
 def parse_args(parser):
-    parser.add_argument('--asm','-a', type=str, action='store', required=True, default="./rop.txt",
+    parser.add_argument('--asm','-a', type=str, action='store', required=False, default = "",
                     help='The asm instruction file to check.')
     parser.add_argument('--badchars','-b', type=str, action='store', required=True, default ="0x00",
                     help='The bad chars to highlight.')
     parser.add_argument('--scroll','-s', type=str, action='store', required=False, default ="10000",
                     help='Set to scroll after number of lines output.')
+    parser.add_argument('--raw','-r', type=str, action='store', required=False, default = "",
+                    help='Raw file as an input, e.g., msfvenom output.')
 
 if __name__ == "__main__":
     main()
