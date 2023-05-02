@@ -10,8 +10,8 @@ Checks for bad characters in custom x86 shellcode. This is really useful when yo
 
 ```
 python3 ./bad-char-check.py                                                            
-usage: bad-char-check.py [-h] --asm ASM --badchars BADCHARS [--scroll SCROLL]
-bad-char-check.py: error: the following arguments are required: --asm/-a, --badchars/-b
+usage: bad-char-check.py [-h] [--asm ASM] --badchars BADCHARS [--scroll SCROLL] [--raw RAW]
+bad-char-check.py: error: the following arguments are required: --badchars/-b
 
 python3 ./bad-char-check.py -a ./test.asm -b "0x00 0x0a 0x11 0xff" -s 20
 0x1000  pushal                                         ; 60 
