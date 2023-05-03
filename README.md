@@ -39,3 +39,31 @@ python3 ./ip-to-hex.py 192.168.1.166
 
 push 0xa601a8c0;                #   Push sin_addr (192.168.1.166)
 ```
+
+### ROP Finder General
+
+[ROP Finder General](https://github.com/plackyhacker/misc-scripts/blob/main/osed/rop-finder-general.py)
+
+Searches an `rp++` output for common ROP gadgets:
+
+```
+./rop-finder-general.py -f ../gadgets.txt -b "0x00 0x0a 0x80 0x81"
+
+~-~-~(RoP fInDeR gEnErAl v1.0)~-~-~
+
+  0. Ref ESP/EBP Gadgets
+  1. MOV/XCHG Gadgets
+  2. PUSHAD Gadgets
+  3. Pointer Deref Gadgets
+  4. Save to Pointer Gadgets
+  5. POP Gadgets
+  6. PUSH-POP Gadgets
+  7. Zeroing Gadgets
+  8. INC Gadgets
+  9. DEC Gadgets
+  a. NEG Gadgets
+  b. ADD Gadgets
+  c. SUB Gadgets
+  d. Custom RegEx
+  e. Quit
+```
