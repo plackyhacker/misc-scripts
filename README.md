@@ -40,6 +40,12 @@ python3 ./ip-to-hex.py 192.168.1.166
 push 0xa601a8c0;                #   Push sin_addr (192.168.1.166)
 ```
 
+### Find Win32 APIs
+
+[Find Win32 APIs](https://github.com/plackyhacker/misc-scripts/blob/main/osed/find-win32-apis.py)
+
+Searches a loaded module for IAT references to APIs.
+
 ### ROP Finder General
 
 [ROP Finder General](https://github.com/plackyhacker/misc-scripts/blob/main/osed/rop-finder-general.py)
