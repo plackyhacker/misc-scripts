@@ -26,6 +26,9 @@ def main():
 
     file = ""
 
+    if args.txt != "":
+        file = args.txt
+        f = open(file, "r")
     if args.asm != "":
         file = args.asm
         f = open(file, "r")
@@ -43,14 +46,23 @@ def main():
     for c in chars:
         bad.append(int(c, 16))
 
-    # encode the asm
+    # encode the as
+    if args.txt != "":
+        bytearr = []
+        tbytes = asm.split(" ")
+        for t in tbytes:
+            bytearr.append(int(t, 16))
+        instructions = bytearr
     if args.asm != "":
-        encodeAll(asm)
-    else:
+        encodeAll(asm, args.platform)
+    if args.raw != "":
         instructions = asm
 
     # now decode so we have the instructions and the shellcode
-    md = Cs(CS_ARCH_X86, CS_MODE_32)
+    if args.platform == "x86":
+        md = Cs(CS_ARCH_X86, CS_MODE_32)
+    else:
+        md = Cs(CS_ARCH_X86, CS_MODE_64)
 
     counter = 0
     counter_scroll = int(args.scroll)
@@ -108,8 +120,12 @@ def formatCode(code, bad):
 
     return retVal
 
-def encodeAll(code):
-    ks = Ks(KS_ARCH_X86, KS_MODE_32)
+def encodeAll(code, platform):
+    if platform == "x86":
+        ks = Ks(KS_ARCH_X86, KS_MODE_32)
+    else:
+        ks = Ks(KS_ARCH_X86, KS_MODE_64)
+
     encoding, count = ks.asm(code)
     for b in encoding:
         instructions.append(int(hex(b).replace("0x", "").rjust(2, "0"), 16))
@@ -123,6 +139,11 @@ def parse_args(parser):
                     help='Set to scroll after number of lines output.')
     parser.add_argument('--raw','-r', type=str, action='store', required=False, default = "",
                     help='Raw file as an input, e.g., msfvenom output.')
+    parser.add_argument('--txt','-t', type=str, action='store', required=False, default = "",
+                    help='Space delimited text file as an input.')
+    parser.add_argument('--platform','-p', type=str, action='store', required=False, default = "x86",
+                    help='Platform x86/x64.')
+
 
 if __name__ == "__main__":
     main()
