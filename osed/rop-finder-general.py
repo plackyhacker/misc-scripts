@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # rop-finder-general.py
 # Script to find 32-bit x86 rop gadgets in rp++ outputs
-# Writtenfor my OSED exam/studies
+# Written for my OSED exam/studies
 # 
 # John Tear
 # 
