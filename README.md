@@ -18,7 +18,7 @@ optional arguments:
   -r RHOSTS, --rhosts RHOSTS
                         The hosts to scan, use CIDR.
   -p PORTS, --ports PORTS
-                        The ports to scan (comma [,] delimited).
+                        The ports to scan (comma [,] delimited), use 'all' to scan for all ports.
   -t TIMEOUT, --timeout TIMEOUT
                         The TCP timeout value, default = 1.5.
   -v, --verbose         Run the script verbosely.
