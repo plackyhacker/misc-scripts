@@ -1,11 +1,3 @@
-#!/usr/bin/python3
-# scanner.py
-# Script written to scan target subnets using python (very noisy)
-# Might be useful to those taking OSCP, particularly when pivoting/proxying
-# 
-# John Tear
-# 
-
 import sys, argparse, socket, ipaddress
 from threading import Thread
 from queue import Queue
@@ -72,6 +64,7 @@ def main():
 
     args=parse_args()
 
+    # verbosity
     verbose = args.verbose
     if verbose:
         console.print("[green bold][+] [/][white bold]Verbose output enabled...[/]\n")
@@ -85,9 +78,13 @@ def main():
         ports = [21, 22, 23, 25, 53, 80, 88, 110, 135, 139, 143, 389, 443, 465, 993, 995, 445, 1443, 3306, 3389, 5985, 5986, 8080, 8443]
     else:
         ports = []
-        p = args.ports.split(",")
-        for prt in p:
-            ports.append(int(prt))
+        if args.ports == "all":
+            for prt in range(1, 65536):
+                ports.append(int(prt))
+        else:
+            p = args.ports.split(",")
+            for prt in p:
+                ports.append(int(prt))
 
     # The number of concurrent threads.
     concurrent = int(args.concurrent)
@@ -115,7 +112,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--concurrent", help="Number of concurrent threads, default=100.", type=str, default="100")
     parser.add_argument("-r", "--rhosts", help="The hosts to scan, use CIDR.", type=str, required=True)
-    parser.add_argument("-p", "--ports", help="The ports to scan (comma [,] delimited).", type=str)
+    parser.add_argument("-p", "--ports", help="The ports to scan (comma [,] delimited), use 'all' to scan for all ports.", type=str)
     parser.add_argument("-t", "--timeout", help="The TCP timeout value, default = 1.5.", type=str, default="1.5")
     parser.add_argument("-v", "--verbose", help="Run the script verbosely.", action='store_true')
 
