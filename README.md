@@ -1,5 +1,31 @@
 # Miscellanious Scripts
 
+## OSCP
+
+### SYN/ACK Port Scanner
+
+[Port Scanner](https://github.com/plackyhacker/misc-scripts/blob/main/oscp/scanner.py)
+
+Performs a noisy scan on target subnets. May be useful if scanning through proxies/pivots (where `nmap` is not playing nicely!)
+
+```
+usage: scanner.py [-h] [-c CONCURRENT] -r RHOSTS [-p PORTS] [-t TIMEOUT] [-v]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -c CONCURRENT, --concurrent CONCURRENT
+                        Number of concurrent threads, default=100.
+  -r RHOSTS, --rhosts RHOSTS
+                        The hosts to scan, use CIDR.
+  -p PORTS, --ports PORTS
+                        The ports to scan (comma [,] delimited).
+  -t TIMEOUT, --timeout TIMEOUT
+                        The TCP timeout value, default = 1.5.
+  -v, --verbose         Run the script verbosely.
+```
+
+<img width="1053" alt="Screenshot 2023-08-14 at 08 18 22" src="https://github.com/plackyhacker/misc-scripts/assets/42491100/d24b4fd5-d835-41a5-a56a-823d104ff83b">
+
 ## OSED
 
 ### Bad Character Check
